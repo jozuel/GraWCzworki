@@ -1,0 +1,3 @@
+﻿  Gra w czwórki.cpp
+c:\users\jozuel\source\repos\gra w czwórki\gra w czwórki\gra w czwórki.cpp(26): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
+  Gra w czwórki.vcxproj -> C:\Users\jozuel\source\repos\Gra w czwórki\Debug\Gra w czwórki.exe
