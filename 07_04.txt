@@ -1,0 +1,16 @@
+To Do
+
+
+- Jaki algorytm użyty do symulacji SI? (Pytanie do PCz)
+
+Symulacja konsolowa
+Tryb 2 graczy - DONE
+Tryb gracz - komputer TO DO (Docelowe)
+
+Element podejmowania wyboru:
+ - algorytm MinMax (drzewo)
+ - rekurencyjne sieci neuronowe
+ 
+Przeniesienie projektu do CodeBlocks / NetBeans
+ - generalnie wyciągnięcie go z VS
+
