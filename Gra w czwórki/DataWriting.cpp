@@ -85,14 +85,14 @@ void DataWriting::writeToFile(vector<int> vec)
 		for (int i = 0; i < vec.size(); i++)
 		{
 			num = vec[i];
-			stream << num<<",";
-			//s = to_string(vec[i]);
-			//s = to_string(num);
-			
-		//	itoa(num, bufer, 10);
-			s += std::to_string((long long) num) + ",";
-			file << s;
+			stream << num<<" ";
+			s += std::to_string((long long)num); //+ ",";
+			file << to_string(num);
+			//file.flush();
+			file << ",";
+			//file << ' ';
 		}
+		file << " ";
 	}
 	/*for(int &i : vec)
 	{
