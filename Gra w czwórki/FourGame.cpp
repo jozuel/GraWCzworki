@@ -26,6 +26,7 @@ FourGame::FourGame()
 {
 	player = 1;
 	empty();
+	counter = 0;
 }
 /*
 set all elements to 0
@@ -110,7 +111,7 @@ int FourGame::checkDiagonal()
 		counter = 0;			//it should by from top to down and then from lower to upper
 		for (int i = 0; i + j < 7; i++)	//from lower to upper
 		{
-			if (i + j >= 0) 
+			if (i + j >= 0)
 			{
 				if (tab[i][i + j] == player)
 				{
@@ -132,7 +133,7 @@ int FourGame::checkDiagonal()
 		counter = 0;		//it should by from down to top and then from upper to lower
 		for (int i = 0; j - i >= 0; i++)	//from upper to lower
 		{
-			if (j - i < 7) 
+			if (j - i < 7)
 			{
 				if (tab[i][j - i] == player)
 				{
@@ -156,7 +157,13 @@ sets next players turn. Players are 1 and 2
 */
 void FourGame::setNextPlayerTurn()
 {
-	player = (player) % 2  + 1;
+	player = (player) % 2 + 1;
+}
+void FourGame::resetGame()
+{
+	empty();
+	player = 1;
+	counter = 0;
 }
 FourGame::~FourGame()
 {

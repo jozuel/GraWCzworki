@@ -36,7 +36,7 @@ writes text to file
 */
 void DataWriting::writeToFile(string text)
 {
-	if(file.is_open())
+	if (file.is_open())
 		file << text.c_str();
 }
 
@@ -52,7 +52,7 @@ void DataWriting::openFile(string name)
 /*
 converts number to it's one-hot equivalent. For example number = 3 and max = 5 will be 001000
 */
-void DataWriting::convertToOneHot(int number, int max,vector<int>& oneHot)
+void DataWriting::convertToOneHot(int number, int max, vector<int>& oneHot)
 {
 	//vector<int> oneHot;
 	for (int i = 1; i < number; i++)	//sets 0 to all position up to number
@@ -85,23 +85,21 @@ void DataWriting::writeToFile(vector<int> vec)
 		for (int i = 0; i < vec.size(); i++)
 		{
 			num = vec[i];
-			stream << num<<" ";
-			s += std::to_string((long long)num); //+ ",";
+			stream << num << " ";
+			s += std::to_string((long long)num);
 			file << to_string(num);
-			//file.flush();
 			file << ",";
-			//file << ' ';
 		}
 		file << " ";
 	}
 	/*for(int &i : vec)
 	{
-		s = to_string(i) + ',';
-		//s = "0,";
-		file << s;
-		//file.put(s.c_str());
-		//file.put(',');
-		//file << s << ',';
+	s = to_string(i) + ',';
+	//s = "0,";
+	file << s;
+	//file.put(s.c_str());
+	//file.put(',');
+	//file << s << ',';
 	}*/
 }
 DataWriting::~DataWriting()

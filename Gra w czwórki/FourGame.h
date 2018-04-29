@@ -16,5 +16,6 @@ public:
 	int checkHorizontalAndVertical();
 	int checkDiagonal();
 	void setNextPlayerTurn();
+	void resetGame();
 };
 
