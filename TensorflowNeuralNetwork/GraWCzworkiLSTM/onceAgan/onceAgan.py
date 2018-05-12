@@ -1,78 +1,8 @@
-""" Dynamic Recurrent Neural Network.
-TensorFlow implementation of a Recurrent Neural Network (LSTM) that performs
-dynamic computation over sequences with variable length. This example is using
-a toy dataset to classify linear sequences. The generated sequences have
-variable length.
-Links:
-    [Long Short Term Memory](http://deeplearning.cs.cmu.edu/pdfs/Hochreiter97_lstm.pdf)
-Author: Aymeric Damien
-Project: https://github.com/aymericdamien/TensorFlow-Examples/
-"""
-
-from __future__ import print_function
 
 import tensorflow as tf
 import random
 
 
-# ====================
-#  DATA READER
-# ====================
-class ToySequenceData(object):
-    """ Generate sequence of data with dynamic length.
-    This class generate samples for training:
-    - Class 0: linear sequences (i.e. [0, 1, 2, 3,...])
-    - Class 1: random sequences (i.e. [1, 3, 10, 7,...])
-    NOTICE:
-    We have to pad each sequence to reach 'max_seq_len' for TensorFlow
-    consistency (we cannot feed a numpy array with inconsistent
-    dimensions). The dynamic calculation will then be perform thanks to
-    'seqlen' attribute that records every actual sequence length.
-    """
-    def __init__(self, n_samples=1000, max_seq_len=25, min_seq_len=1,
-                 max_value=1000):
-        self.data = []
-        self.labels = []
-        self.seqlen = []
-        for i in range(n_samples):
-            # Random sequence length
-            len = random.randint(min_seq_len, max_seq_len)
-            # Monitor sequence length for TensorFlow dynamic calculation
-            self.seqlen.append(len)
-            # Add a random or linear int sequence (50% prob)
-            if random.random() < .5:
-                # Generate a linear sequence
-                rand_start = random.randint(0, max_value - len)
-                s = [[float(i)/max_value] for i in
-                     range(rand_start, rand_start + len)]
-                # Pad sequence for dimension consistency
-                s += [[0.] for i in range(max_seq_len - len)]
-                self.data.append(s)
-                self.labels.append([1., 0.])
-            else:
-                # Generate a random sequence
-                s = [[float(random.randint(0, max_value))/max_value]
-                     for i in range(len)]
-                # Pad sequence for dimension consistency
-                s += [[0.] for i in range(max_seq_len - len)]
-                self.data.append(s)
-                self.labels.append([0., 1.])
-        self.batch_id = 0
-    
-    def next(self, batch_size):
-        """ Return a batch of data. When dataset end is reached, start over.
-        """
-        # tu można podstawić funkcję z pobieraniem z pliku
-        if self.batch_id == len(self.data):
-            self.batch_id = 0
-        batch_data = (self.data[self.batch_id:min(self.batch_id +
-                                                  batch_size, len(self.data))])
-        batch_labels = (self.labels[self.batch_id:min(self.batch_id +
-                                                  batch_size, len(self.data))])
-        batch_seqlen = (self.seqlen[self.batch_id:min(self.batch_id +
-                                                  batch_size, len(self.data))])
-        self.batch_id = min(self.batch_id + batch_size, len(self.data))
-        return batch_data, batch_labels, batch_seqlen
 def fillWithZero(lista):
     zero_list = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
     for _ in range(25-len(lista)):
@@ -137,13 +67,13 @@ def slice_it(arr, size):
 # Parameters
 learning_rate = 0.01
 training_steps = 10000
-batch_size = 10000
+batch_size = 20000
 display_step = 200
 
 # Network Parameters
 seq_max_len = 25 # Sequence max length
-n_hidden = 64 # hidden layer num of features
-n_classes = 19 # linear sequence or not
+n_hidden = 200 # hidden layer num of features
+n_classes = 7 # linear sequence or not
 
 #trainset = ToySequenceData(n_samples=1000, max_seq_len=seq_max_len)
 #testset = ToySequenceData(n_samples=500, max_seq_len=seq_max_len)
@@ -177,8 +107,7 @@ def dynamicRNN(x, seqlen, weights, biases):
 
     # Get lstm cell output, providing 'sequence_length' will perform dynamic
     # calculation.
-    outputs, states = tf.contrib.rnn.static_rnn(lstm_cell, x, dtype=tf.float32,
-                                sequence_length=seqlen)
+    outputs, states = tf.contrib.rnn.static_rnn(lstm_cell, x, dtype=tf.float32,sequence_length=seqlen)
 
     # When performing dynamic calculation, we must retrieve the last
     # dynamically computed output, i.e., if a sequence length is 10, we need
@@ -203,87 +132,131 @@ def dynamicRNN(x, seqlen, weights, biases):
 
     # Linear activation, using outputs computed above
     return tf.matmul(outputs, weights['out']) + biases['out']
+def rnn_train():
+    pred = dynamicRNN(x, seqlen, weights, biases)
 
+    # Define loss and optimizer
+    cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=pred, labels=y))
+    optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)
+
+    # Evaluate model
+    correct_pred = tf.equal(tf.argmax(pred,1), tf.argmax(y,1))
+    accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
+
+    # Initialize the variables (i.e. assign their default value)
+    init = tf.global_variables_initializer()
+
+    # Start training
+    saver = tf.train.Saver()
+    with tf.Session() as sess:
+        saver = tf.train.Saver()
+        # Run the initializer
+        sess.run(init)
+        lineList = []
+        lineList_copy = []
+        x_train = []
+        y_train = []    #pobieranie danych i wynikow bez wypelnienia zerami
+        x_stack_list = []
+        x_stack_list_copy = []
+        x_train, y_train = openFile()
+        #batch_size = 10000   #wielkosc paczki
+        no_of_batches = 10   #ilosc paczek. ilosc danych / wielkosc paczki    
+        epoch = 20 #ile razy ma sie cykl powtarzac
+        for i in range(epoch):  
+            ptr = 0
+            for game in range(1000):      # do naszegame sieci neuronowej można by co 1 rozgrywkę optymalizować
+                #inp, out = train_input[ptr:ptr+ batch_size], train_output[ptr:ptr+batch_size]   #pobieramy wejscie i wyjscie od ptr do ptr + wielkosc paczki
+                ptr+=batch_size;
+                if(len(x_train[game])>len(y_train[game])):
+                    minimum = len(y_train[game])
+                    x_train[game].pop()
+                elif(len(x_train[game])<len(y_train[game])):
+                    minimum = len(x_train[game])
+                    y_train[game].pop()             # w przypadku gdy 1 inputu jest za dużo (x lub y) by była ich rowna ilosc
+                else:
+                    minimum = len(x_train[game])
+
+                x_length = len(x_train[game])
+                x_stack_list_copy.clear()
+                x_stack_list.clear()
+                for j in range(x_length):
+                    x_stack_list.append(x_train[game][j].copy())    
+                    x_stack_list_copy = x_stack_list.copy()
+                    x_stack_list_copy = fillWithZero(x_stack_list_copy)     #shape (25,19)
+                    sess.run(optimizer,feed_dict={x: [x_stack_list_copy], y: [y_train[game][j][0:7]],seqlen:[j+1]}) 
+                    acc, loss = sess.run([accuracy, cost], feed_dict={x: [x_stack_list_copy], y: [y_train[game][j][0:7]],
+                                                    seqlen: [j+1]})
+            for game in range(1000, 15000):      # do naszegame sieci neuronowej można by co 1 rozgrywkę optymalizować
+                #inp, out = train_input[ptr:ptr+ batch_size], train_output[ptr:ptr+batch_size]   #pobieramy wejscie i wyjscie od ptr do ptr + wielkosc paczki
+                ptr+=batch_size;
+                if(len(x_train[game])>len(y_train[game])):
+                    minimum = len(y_train[game])
+                    x_train[game].pop()
+                elif(len(x_train[game])<len(y_train[game])):
+                    minimum = len(x_train[game])
+                    y_train[game].pop()             # w przypadku gdy 1 inputu jest za dużo (x lub y) by była ich rowna ilosc
+                else:
+                    minimum = len(x_train[game])
+
+                x_length = len(x_train[game])
+                x_stack_list_copy.clear()
+                x_stack_list.clear()
+                x_stack_list = x_train[game].copy()
+                x_stack_list = fillWithZero(x_stack_list)
+                sess.run(optimizer,feed_dict={x: [x_stack_list], y: [y_train[game][x_length-1][0:7]],seqlen:[x_length]}) 
+                #for j in range(x_length):
+                #    x_stack_list.append(x_train[game][j].copy())    
+                #    x_stack_list_copy = x_stack_list.copy()
+                #    x_stack_list_copy = fillWithZero(x_stack_list_copy)     #shape (25,19)
+                #    sess.run(optimizer,feed_dict={x: [x_stack_list_copy], y: [y_train[game][j]],seqlen:[j+1]}) 
+                #    acc, loss = sess.run([accuracy, cost], feed_dict={x: [x_stack_list_copy], y: [y_train[game][j]],
+                #                                    seqlen: [j+1]})
+                    #dodac petle z onceagane by miec rosnaca tablice elementow x i 1 element y
+            print("Step " + str(i) + ", Minibatch Loss= " + \
+                      "{:.6f}".format(loss) + ", Training Accuracy= " + \
+                      "{:.5f}".format(acc))
+        #for step in range(1, training_steps + 1):
+           # batch_x, batch_y, batch_seqlen = trainset.next(batch_size)
+            # Run optimization op (backprop)
+            #sess.run(optimizer, feed_dict={x: batch_x, y: batch_y,
+            #                               seqlen: batch_seqlen})
+            #if step % display_step == 0 or step == 1:
+                # Calculate batch accuracy & loss
+            #    acc, loss = sess.run([accuracy, cost], feed_dict={x: batch_x, y: batch_y,
+            #                                        seqlen: batch_seqlen})
+            #    print("Step " + str(step*batch_size) + ", Minibatch Loss= " + \
+            #          "{:.6f}".format(loss) + ", Training Accuracy= " + \
+            #          "{:.5f}".format(acc))
+
+        print("Optimization Finished!")
+        #save_path = saver.save(sess, "/tmp/model.ckpt")
+
+        saver.save(sess, r'C:\Users\jozuel\Desktop\neural networks\my_test_model.ckpt')
+
+#rnn_train()
+#init = tf.global_variables_initializer()
 pred = dynamicRNN(x, seqlen, weights, biases)
 
 # Define loss and optimizer
 cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=pred, labels=y))
-optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate).minimize(cost)
+optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)
 
 # Evaluate model
 correct_pred = tf.equal(tf.argmax(pred,1), tf.argmax(y,1))
 accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
-
-# Initialize the variables (i.e. assign their default value)
-init = tf.global_variables_initializer()
-
-# Start training
+saver = tf.train.Saver()
 with tf.Session() as sess:
+    saver.restore(sess, r'C:\Users\jozuel\Desktop\neural networks\my_test_model.ckpt')
+    print("Model restored.")
 
-    # Run the initializer
-    sess.run(init)
+   # sess.run(init)
+    line = []
     lineList = []
     lineList_copy = []
     x_train = []
     y_train = []    #pobieranie danych i wynikow bez wypelnienia zerami
     x_stack_list = []
     x_stack_list_copy = []
-    x_train, y_train = openFile()
-    #batch_size = 10000   #wielkosc paczki
-    no_of_batches = 5000   #ilosc paczek. ilosc danych / wielkosc paczki    
-    epoch = 5 #ile razy ma sie cykl powtarzac
-    for i in range(epoch):  
-        ptr = 0
-        for game in range(batch_size):      # do naszegame sieci neuronowej można by co 1 rozgrywkę optymalizować
-            #inp, out = train_input[ptr:ptr+ batch_size], train_output[ptr:ptr+batch_size]   #pobieramy wejscie i wyjscie od ptr do ptr + wielkosc paczki
-            ptr+=batch_size;
-            if(len(x_train[game])>len(y_train[game])):
-                minimum = len(y_train[game])
-                x_train[game].pop()
-            elif(len(x_train[game])<len(y_train[game])):
-                minimum = len(x_train[game])
-                y_train[game].pop()             # w przypadku gdy 1 inputu jest za dużo (x lub y) by była ich rowna ilosc
-            else:
-                minimum = len(x_train[game])
-
-            x_length = len(x_train[game])
-            x_stack_list_copy.clear()
-            x_stack_list.clear()
-            for j in range(x_length):
-                x_stack_list.append(x_train[game][j].copy())    
-                x_stack_list_copy = x_stack_list.copy()
-                x_stack_list_copy = fillWithZero(x_stack_list_copy)     #shape (25,19)
-                sess.run(optimizer,feed_dict={x: [x_stack_list_copy], y: [y_train[game][j]],seqlen:[j+1]}) 
-                acc, loss = sess.run([accuracy, cost], feed_dict={x: [x_stack_list_copy], y: [y_train[game][j]],
-                                                seqlen: [j+1]})
-                #dodac petle z onceagane by miec rosnaca tablice elementow x i 1 element y
-
-
-            #for round in range(minimum):
-             #   x_round_list = []
-              #  y_round_list = []
-               # x_round_list.append(x[game][round])
-                #y_round_list.append(y[game][round])
-            #sess.run(optimizer,feed_dict={x: [x_train[game]], y: [y_train[game]],seqlen:[minimum]}) 
-        #acc, loss = sess.run([accuracy, cost], feed_dict={x: [x_train[game]], y: [y_train[game]],
-        #                                        seqlen: minimum})
-        print("Step " + str(i) + ", Minibatch Loss= " + \
-                  "{:.6f}".format(loss) + ", Training Accuracy= " + \
-                  "{:.5f}".format(acc))
-    #for step in range(1, training_steps + 1):
-       # batch_x, batch_y, batch_seqlen = trainset.next(batch_size)
-        # Run optimization op (backprop)
-        #sess.run(optimizer, feed_dict={x: batch_x, y: batch_y,
-        #                               seqlen: batch_seqlen})
-        #if step % display_step == 0 or step == 1:
-            # Calculate batch accuracy & loss
-        #    acc, loss = sess.run([accuracy, cost], feed_dict={x: batch_x, y: batch_y,
-        #                                        seqlen: batch_seqlen})
-        #    print("Step " + str(step*batch_size) + ", Minibatch Loss= " + \
-        #          "{:.6f}".format(loss) + ", Training Accuracy= " + \
-        #          "{:.5f}".format(acc))
-
-    print("Optimization Finished!")
     for i in range(25):
         line = input()
         line = line.split(",")  
@@ -291,8 +264,9 @@ with tf.Session() as sess:
         lineList.append(line.copy())
         lineList_copy = lineList.copy()
         lineList_copy = fillWithZero(lineList_copy)
-        print (sess.run(l1,{x: [lineList_copy], seqlen:[i+1]}))
+        print (sess.run(pred,feed_dict={x: [lineList_copy], seqlen:[i+1]}))
     # Calculate accuracy
+    #feed_dict={x: [x_stack_list_copy], y: [y_train[game][j]],seqlen:[j+1]}
     #test_data = testset.data
     #test_label = testset.labels
     #test_seqlen = testset.seqlen
