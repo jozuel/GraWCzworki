@@ -10,7 +10,11 @@ Tryb gracz - komputer TO DO (Docelowe)
 Element podejmowania wyboru:
  - algorytm MinMax (drzewo)
  - rekurencyjne sieci neuronowe
- 
+
 Przeniesienie projektu do CodeBlocks / NetBeans
  - generalnie wyciągnięcie go z VS
 
+
+
+ TEST Z DZIAŁANIA GIT-A
+ 12.05.2018
