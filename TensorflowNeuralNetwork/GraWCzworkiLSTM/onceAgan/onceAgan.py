@@ -2,13 +2,14 @@
 import tensorflow as tf
 import random
 
-
+#wypełnia ilość elementów w tablicy do 25
 def fillWithZero(lista):
     zero_list = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
     for _ in range(25-len(lista)):
         lista.append(zero_list.copy())
 
     return lista
+#struktura danych pierwsze 7 znaków określa kolumne, kolejne 7 znaktów wiersz, kolejne 2 znaki gracza, ostatnie 3 znaki status rozgrywki(wygrana/przegrana/brak)
 def openFile():
     file = open("test.txt", "r")
     lista = []
@@ -71,20 +72,19 @@ batch_size = 20000
 display_step = 200
 
 # Network Parameters
-seq_max_len = 25 # Sequence max length
-n_hidden = 200 # hidden layer num of features
-n_classes = 7 # linear sequence or not
+seq_max_len = 25 # Sequence max length                  #maxymalna długość 
+n_hidden = 200 # hidden layer num of features           # iloś węzłów
+n_classes = 7  # dane wyjściowe
 
-#trainset = ToySequenceData(n_samples=1000, max_seq_len=seq_max_len)
-#testset = ToySequenceData(n_samples=500, max_seq_len=seq_max_len)
+
 
 # tf Graph input
-x = tf.placeholder("float", [1,seq_max_len, 19])
-y = tf.placeholder("float", [1,n_classes])
+x = tf.placeholder("float", [1,seq_max_len, 19])    #miejsce na dane typu float
+y = tf.placeholder("float", [1,n_classes])          
 # A placeholder for indicating each sequence length
-seqlen = tf.placeholder(tf.int32, [None])
+seqlen = tf.placeholder(tf.int32, [None])   #miejsce na długość sekwencji
 
-# Define weights
+# Define weights        #ustawiamy losowe wartości dla wag i biases
 weights = {
     'out': tf.Variable(tf.random_normal([n_hidden, n_classes]))
 }
@@ -123,7 +123,7 @@ def dynamicRNN(x, seqlen, weights, biases):
 
     batch_size = tf.shape(outputs)[0]
     # Hack to build the indexing and retrieve the right output.
-    idx = tf.range(batch_size)*tf.shape(outputs)[1] + (seqlen - 1)  #last output index
+    idx = tf.range(batch_size)*tf.shape(outputs)[1] + (seqlen - 1)  #last output index  #pobieramy ostatni output z ustalonej długości
     
     # Start indices for each sample
     index = tf.range(0, batch_size) * seq_max_len + (seqlen - 1)
@@ -131,9 +131,9 @@ def dynamicRNN(x, seqlen, weights, biases):
     outputs = tf.gather(tf.reshape(outputs, [-1, n_hidden]), idx)
 
     # Linear activation, using outputs computed above
-    return tf.matmul(outputs, weights['out']) + biases['out']
+    return tf.matmul(outputs, weights['out']) + biases['out']   #liczy wynik
 def rnn_train():
-    pred = dynamicRNN(x, seqlen, weights, biases)
+    pred = dynamicRNN(x, seqlen, weights, biases)   #przewidujemy wynik
 
     # Define loss and optimizer
     cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=pred, labels=y))
@@ -147,7 +147,7 @@ def rnn_train():
     init = tf.global_variables_initializer()
 
     # Start training
-    saver = tf.train.Saver()
+    saver = tf.train.Saver()    
     with tf.Session() as sess:
         saver = tf.train.Saver()
         # Run the initializer
@@ -184,8 +184,8 @@ def rnn_train():
                     x_stack_list_copy = x_stack_list.copy()
                     x_stack_list_copy = fillWithZero(x_stack_list_copy)     #shape (25,19)
                     sess.run(optimizer,feed_dict={x: [x_stack_list_copy], y: [y_train[game][j][0:7]],seqlen:[j+1]}) 
-                    acc, loss = sess.run([accuracy, cost], feed_dict={x: [x_stack_list_copy], y: [y_train[game][j][0:7]],
-                                                    seqlen: [j+1]})
+                    acc, loss = sess.run([accuracy, cost], feed_dict={x: [x_stack_list_copy], y: [y_train[game][j][0:7]], 
+                                                    seqlen: [j+1]}) #0:7 by zabrać pierwsze 7 znaków określające kolumne
             for game in range(1000, 15000):      # do naszegame sieci neuronowej można by co 1 rozgrywkę optymalizować
                 #inp, out = train_input[ptr:ptr+ batch_size], train_output[ptr:ptr+batch_size]   #pobieramy wejscie i wyjscie od ptr do ptr + wielkosc paczki
                 ptr+=batch_size;
@@ -204,34 +204,15 @@ def rnn_train():
                 x_stack_list = x_train[game].copy()
                 x_stack_list = fillWithZero(x_stack_list)
                 sess.run(optimizer,feed_dict={x: [x_stack_list], y: [y_train[game][x_length-1][0:7]],seqlen:[x_length]}) 
-                #for j in range(x_length):
-                #    x_stack_list.append(x_train[game][j].copy())    
-                #    x_stack_list_copy = x_stack_list.copy()
-                #    x_stack_list_copy = fillWithZero(x_stack_list_copy)     #shape (25,19)
-                #    sess.run(optimizer,feed_dict={x: [x_stack_list_copy], y: [y_train[game][j]],seqlen:[j+1]}) 
-                #    acc, loss = sess.run([accuracy, cost], feed_dict={x: [x_stack_list_copy], y: [y_train[game][j]],
-                #                                    seqlen: [j+1]})
-                    #dodac petle z onceagane by miec rosnaca tablice elementow x i 1 element y
+
             print("Step " + str(i) + ", Minibatch Loss= " + \
                       "{:.6f}".format(loss) + ", Training Accuracy= " + \
                       "{:.5f}".format(acc))
-        #for step in range(1, training_steps + 1):
-           # batch_x, batch_y, batch_seqlen = trainset.next(batch_size)
-            # Run optimization op (backprop)
-            #sess.run(optimizer, feed_dict={x: batch_x, y: batch_y,
-            #                               seqlen: batch_seqlen})
-            #if step % display_step == 0 or step == 1:
-                # Calculate batch accuracy & loss
-            #    acc, loss = sess.run([accuracy, cost], feed_dict={x: batch_x, y: batch_y,
-            #                                        seqlen: batch_seqlen})
-            #    print("Step " + str(step*batch_size) + ", Minibatch Loss= " + \
-            #          "{:.6f}".format(loss) + ", Training Accuracy= " + \
-            #          "{:.5f}".format(acc))
 
         print("Optimization Finished!")
         #save_path = saver.save(sess, "/tmp/model.ckpt")
 
-        saver.save(sess, r'C:\Users\jozuel\Desktop\neural networks\my_test_model.ckpt')
+        saver.save(sess, r'C:\Users\jozuel\Desktop\neural networks\my_test_model.ckpt')     #zapisujemy model
 
 #rnn_train()
 #init = tf.global_variables_initializer()
@@ -264,12 +245,16 @@ with tf.Session() as sess:
         lineList.append(line.copy())
         lineList_copy = lineList.copy()
         lineList_copy = fillWithZero(lineList_copy)
-        print (sess.run(pred,feed_dict={x: [lineList_copy], seqlen:[i+1]}))
-    # Calculate accuracy
-    #feed_dict={x: [x_stack_list_copy], y: [y_train[game][j]],seqlen:[j+1]}
-    #test_data = testset.data
-    #test_label = testset.labels
-    #test_seqlen = testset.seqlen
-    #print("Testing Accuracy:", \
-    #    sess.run(accuracy, feed_dict={x: test_data, y: test_label,
-#seqlen: test_seqlen}))
+        #print (sess.run(pred,feed_dict={x: [lineList_copy], seqlen:[i+1]}))
+        output = sess.run(pred,feed_dict={x: [lineList_copy], seqlen:[i+1]})
+        print(output)
+        output = output[0]
+        output = output[0:7]
+        #print (sess.run(l1,{input_data: [line]}))
+        maximum = output[0]
+        index = 0
+        for elem in range(len(output)):
+            if([output[elem]]>maximum):
+                maximum = output[elem]
+                index = elem
+        print(index)

@@ -264,7 +264,19 @@ with tf.Session() as sess:
         lineList.append(line.copy())
         lineList_copy = lineList.copy()
         lineList_copy = fillWithZero(lineList_copy)
-        print (sess.run(pred,feed_dict={x: [lineList_copy], seqlen:[i+1]}))
+        #print (sess.run(pred,feed_dict={x: [lineList_copy], seqlen:[i+1]}))
+        output = sess.run(pred,feed_dict={x: [lineList_copy], seqlen:[i+1]})
+        print(output)
+        output = output[0]
+        output = output[0:7]
+        #print (sess.run(l1,{input_data: [line]}))
+        maximum = output[0]
+        index = 0
+        for elem in range(len(output)):
+            if([output[elem]]>maximum):
+                maximum = output[elem]
+                index = elem
+        print(index)
     # Calculate accuracy
     #feed_dict={x: [x_stack_list_copy], y: [y_train[game][j]],seqlen:[j+1]}
     #test_data = testset.data
